@@ -89,7 +89,7 @@ allocat = ["ExAllocatePoolWithQuotaTag","ExAllocatePoolWithTagPriority","NdisAll
 dis_allocat = ["MmFreeNonCachedMemory","ExFreePool","ExFreePoolWithTag","ZwFreeVirtualMemory","MmFreeContiguousMemory"]
 
 
-str = ["RtlInitString","RtlInitAnsiString","RtlInitUnicodeString","RtlAnsiStringToUnicodeSize","RtlAnsiStringToUnicodeString","RtlUnicodeStringToAnsiString","RtlFreeAnsiString", "RtlAppendUnicodeStringToString","RtlAppendUnicodeToString","RtlCopyString","RtlCopyUnicodeString", 
+Str = ["RtlInitString","RtlInitAnsiString","RtlInitUnicodeString","RtlAnsiStringToUnicodeSize","RtlAnsiStringToUnicodeString","RtlUnicodeStringToAnsiString","RtlFreeAnsiString", "RtlAppendUnicodeStringToString","RtlAppendUnicodeToString","RtlCopyString","RtlCopyUnicodeString", 
 "RtlUnicodeStringToInteger","RtlIntegerToUnicodeString","RtlUpcaseUnicodeString","RtlCompareUnicodeString", "RtlCompareString"," RtlEqualUnicodeString","RtlEqualString"]
 
 network_activity = ["GetPhysicalAddress","GetAllNetworkInterfaces","GetIsNetworkAvailable","GetIP"]
