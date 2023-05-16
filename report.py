@@ -1,5 +1,6 @@
 import sys
 from collections import defaultdict
+import cProfile, pstats
 
 # Constants
 
@@ -121,7 +122,7 @@ from dependencies.device_types import *
 from dependencies.entropy import *
 from dependencies.clusters import *
 
-import re
+import regex as re
 import sys
 
 # We precomile the regexes in order to try to speed up the
@@ -333,9 +334,9 @@ def MISC_handle():
         IRP_hook += 0.5
     elif compiled_regexes.search(r"eax, cr0", st):
         CR += 1
-    elif compiled_regexes.search("eax, 0FFFEFFFFh", st) and CR > 0:
+    elif compiled_regexes.search(r"eax, 0FFFEFFFFh", st) and CR > 0:
         CR += 1
-    elif compiled_regexes.search("call\tsub\_", st):
+    elif compiled_regexes.search(r"call\tsub\_", st):
         if compiled_regexes.search(current_routine, st):
             if alloc[current_routine] == "T":
                 Allocation += 1
@@ -616,10 +617,8 @@ def report2():
 ## Helper functions
 
 def matches_one_of(s, regex_list):
-    for regex in regex_list:
-        if compiled_regexes.search(regex, s):
-            return True
-    return False
+    alt_regex = r'|'.join("(" + regex + ")" for regex in regex_list)
+    return compiled_regexes.search(alt_regex, s)
 
 def matches_all_of(s, regex_list):
     for regex in regex_list:
@@ -628,14 +627,18 @@ def matches_all_of(s, regex_list):
     return True
 
 def grep(regex, string_list):
-    return list(filter(lambda s: compiled_regexes.search(regex, s), string_list))
+    acc = []
+    for s in string_list:
+        if compiled_regexes.search(regex, s):
+            acc.append(s)
+    return acc
 
 def SCORE_analysis_check(arg, check_length=True):
     global string
     if check_length:
-        return (grep(API, arg) or grep("^"+string, arg)) and len(string) > 6
+        return grep("("+ API + ")|(^" + string + ")", arg) and len(string) > 6
     else:
-        return (grep(API, arg) or grep("^"+string, arg))
+        return grep("("+ API + ")|(^" + string + ")", arg)
 
 
 
@@ -654,6 +657,7 @@ if __name__ == "__main__":
         VARIABLES_handle()
         MISC_handle()
         SCORE_analysis()
-
+        
     score_calc()
     report2()
+    
