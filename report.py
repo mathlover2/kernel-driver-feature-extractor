@@ -141,7 +141,7 @@ class CompiledRegexes:
     def sub(self, regex_string, repl, line):
         return self(regex_string).subs(repl)
             
-compiled_regexes = CompiledRegexes
+compiled_regexes = CompiledRegexes()
 
 
 # This is the first subroutine run in the course of the program, so
