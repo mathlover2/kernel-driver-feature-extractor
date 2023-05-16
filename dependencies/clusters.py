@@ -100,7 +100,7 @@ DMA_cluster = ["IoGetDmaAdapter","GetDmaAlignment","PutScatterGatherList"]
 
 
 
-section = ["ZwCreateSection","ZwOpenSection","ZwQuerySection","SectionBasicInformation","SectionImageInformation","ZwCreateDirectoryObject","ZwOpenDirectoryObject","ZwReadFile","ZwWriteFile","ZwReadFileScatter","ZwWriteFileGather"]
+section_activity = ["ZwCreateSection","ZwOpenSection","ZwQuerySection","SectionBasicInformation","SectionImageInformation","ZwCreateDirectoryObject","ZwOpenDirectoryObject","ZwReadFile","ZwWriteFile","ZwReadFileScatter","ZwWriteFileGather"]
 
 file_activity = ["CcSetLogHandleForFile","ZwOpenFile","ZwCreateFile","ZwFlushBuffersFile","ZwSetInformationFile","ZwCreatePagingFile","CcGetFileObjectFromSectionPtrsRef","CcGetFileObjectFromSectionPtrs","CcGetFileObjectFromBcb"]
 
@@ -108,7 +108,7 @@ device_activity = ["ZwDeviceIoControlFile","ZwFsControlFile","KeInsertDeviceQueu
 
 fs_activity = ["ZwSetQuotaInformationFile","IoWritePartitionTable","IoSetPartitionInformation","IoReadPartitionTable"]
 
-registery_activity = ["ZwCreateKey","ZwOpenKey","ZwDeleteKey","ZwFlushKey","ZwSaveKey","ZwSaveMergedKeys","ZwRestoreKey","ZwLoadKey","ZwLoadKey2","ZwQueryOpenSubKeys","ZwReplaceKey" , "ZwSetInformationKey","ZwQueryKey","ZwEnumerateKey","ZwDeleteValueKey","ZwSetValueKey","ZwQueryValueKey","ZwEnumerateValueKey","ZwQueryMultipleValueKey","ZwInitializeRegistry"]
+registry_activity = ["ZwCreateKey","ZwOpenKey","ZwDeleteKey","ZwFlushKey","ZwSaveKey","ZwSaveMergedKeys","ZwRestoreKey","ZwLoadKey","ZwLoadKey2","ZwQueryOpenSubKeys","ZwReplaceKey" , "ZwSetInformationKey","ZwQueryKey","ZwEnumerateKey","ZwDeleteValueKey","ZwSetValueKey","ZwQueryValueKey","ZwEnumerateValueKey","ZwQueryMultipleValueKey","ZwInitializeRegistry"]
 
 thread_activity = ["PsCreateSystemThread","PsTerminateSystemThread","KeSetPriorityThread"]
 
