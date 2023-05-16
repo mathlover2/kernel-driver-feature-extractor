@@ -139,22 +139,22 @@ def first():
             in_DriverEntry = 1
             Entry_sub['DriverEntry'] = 1
         elif in_DriverEntry == 1:
-            if re.search("call\tsub", line):
-                l = re.split('sub_', line)
-                Entry_sub['sub_' + l[1]] = 1
+            if re.search(r"call\tsub", line):
+                l = re.split(r"sub_", line)
+                Entry_sub["sub_" + l[1]] = 1
                 Entry_sub_count += 1
-            elif re.search("call\tloc", line):
+            elif re.search(r"call\tloc", line):
                 l = re.split('loc_', line)
                 Entry_sub['loc_' + l[1]] = 1
                 Entry_sub_count += 1
-        if re.search("\tendp", line):
-            l = re.split("\t", line)
+        if re.search(r"\tendp", line):
+            l = re.split(r"\t", line)
             r = l[0]
             if r == "DriverEntry":
                 in_DriverEntry = 0
     openedFile.close()
     openedFile = open(filename, "r")
-    f = re.split("\/", filename)
+    f = re.split(r"\/", filename)
     size = len(f) - 1
     file_name = f[size]
     DKOM_suspend = 0
@@ -169,15 +169,15 @@ def VAR_handle():
     global st
     API_found = 0
     lines += 1
-    if re.search("^push.*DesiredAccess$", st):
-        l = re.split("push", st)
-        d = re.split(";", l[1])
+    if re.search(r"^push.*DesiredAccess$", st):
+        l = re.split(r"push", st)
+        d = re.split(r";", l[1])
         DesiredAccess = d[0]
-    if re.search("^cmp ", st):
-        l = re.split("\,",st)
-        l[1] = re.sub("[\x0A\x0D]", "", l[1])
-        if re.search("h", l[1]):
-            ll = re.split("h", l[1])
+    if re.search(r"^cmp ", st):
+        l = re.split(r"\,",st)
+        l[1] = re.sub(r"[\x0A\x0D]", "", l[1])
+        if re.search(r"h", l[1]):
+            ll = re.split(r"h", l[1])
             cmp_constant = ll[1:]
         else:
             cmp_constant = "INVALID"
@@ -186,24 +186,24 @@ def VAR_handle():
 def find_current_routine():
     global current_routine
     global st
-    if re.search("^sub", st):
-        l = re.split("\t", st)
+    if re.search(r"^sub", st):
+        l = re.split(r"\t", st)
         current_routine = l[0]
-    elif re.search("^sub", st):
+    elif re.search(r"^sub", st):
         current_routine = "INVALID"
-    elif re.search("DriverEntry", st):
+    elif re.search(r"DriverEntry", st):
         current_routine = "DriverEntry"
 
 def API_handle():
     global APIcount, API
     global st
-    match_list = ["ds:"+suff for suff in ["Zw", "Ke", "Ks", "Cm",
-                                          "Ex", "Hal", "Io", "Mm",
-                                          "Ob", "Po", "Ps", "Rtl",
-                                          "Se", "Ndis", "Cc", "Se"]]
+    match_list = [r"ds:"+suff for suff in [r"Zw", r"Ke", r"Ks", r"Cm",
+                                          r"Ex", r"Hal", r"Io", r"Mm",
+                                          r"Ob", r"Po", r"Ps", r"Rtl",
+                                          r"Se", r"Ndis", r"Cc", r"Se"]]
     if matches_one_of(st, match_list):
         l = re.split("ds:", st)
-        l[1] = re.sub("[\x0a\x0D]", "", st)
+        l[1] = re.sub(r"[\x0a\x0D]", "", st)
         API = l[1]
         APIcount += 1
 
@@ -222,13 +222,13 @@ def IRP_handle():
     global st
     if Entry_sub[current_routine] == 1:
         DriverEntry_size += 1
-        if re.search('\*4\+38h', st):
+        if re.search(r'\*4\+38h', st):
             MJ_loop = "T"
             if cmp_constant != "INVALID":
                 MJ_IRP = "0-"+hex(cmp_constant)+MJ_IRP
-        elif re.search("\[\+\d\d38-\d\d53]h\]", st):
-            l = re.split("\+", st)
-            d = re.split("h", l[1])
+        elif re.search(r"\[\+\d\d38-\d\d53]h\]", st):
+            l = re.split(r"\+", st)
+            d = re.split(r"h", l[1])
             # MJ_IRP[c] = d[0]
             IRP_counter += 1
             if d[0] == '71' or d[0] == '70':
@@ -237,7 +237,7 @@ def IRP_handle():
                 fs += 1
             MJ_IRP = MJ_IRP + " " + d[0]
 
-    if matches_all_of(st, ["DEVICE_OBJECT", "PIRP", "\(", "\)"]):
+    if matches_all_of(st, ["DEVICE_OBJECT", "PIRP", r"\(", r"\)"]):
         dispatch_routines += 1
         d_routines = d_routines + " " + current_routine
 
@@ -247,28 +247,28 @@ def DEVICE_handle():
     global devicetype, types, undoc_device
     global deviceN
     global st
-    if re.search("\\\\Device\\\\", st):
-        tt = re.split("[\"\']", st)
+    if re.search(r"\\\\Device\\\\", st):
+        tt = re.split(r"[\"\']", st)
         devicename = devicename + " " + tt[1]
         y = entropy(devicename)
         if y < String_entropy:
             String_entropy = y
         device_count += 1
         device_N = "T"
-        if re.search("\.|\:",st):
+        if re.search(r"\.|\:",st):
             suspectancy += 1
-        if re.search("\*", st):
+        if re.search(r"\*", st):
             suspectancy += 1
-        if re.search("\.\.", st):
+        if re.search(r"\.\.", st):
             suspectancy += 1
-    elif re.search("\;\ DeviceType/", st):
-        tt = re.split("push", st)
-        ttt = re.split("\t", tt[1])
+    elif re.search(r"\;\ DeviceType/", st):
+        tt = re.split(r"push", st)
+        ttt = re.split(r"\t", tt[1])
         devicetype = ttt[1][:-1]
         if device_type[devicetype]:
             types = types + device_type[devicetype]
         else:
-            types = types + " undoc"
+            types = types + r" undoc"
             undoc_device += 1
         deviceN = T
 
@@ -276,11 +276,11 @@ def VARIABLES_handle():
     global suspectancy, str_count, General_none_e
     global string_entropy, string
     global st
-    search_expr = "[\\\/\&\.\:\*\'\"\]\[\(\)\&\$\^\#\-\_\,\;\@\ \!\?\+\=]"
-    sub_expr = "(" + search_expr + "|" + "[\x20-\x7f])" 
-    if re.search("db\ \'", st):
-        w = re.split("\'", st)
-        t2 = re.split("\'", w[1])
+    search_expr = r"[\\\/\&\.\:\*\'\"\]\[\(\)\&\$\^\#\-\_\,\;\@\ \!\?\+\=]"
+    sub_expr = r"(" + search_expr + r"|" + r"[\x20-\x7f])" 
+    if re.search(r"db\ \'", st):
+        w = re.split(r"\'", st)
+        t2 = re.split(r"\'", w[1])
         string = t2[0]
         if re.search(search_expr, string):
             suspectancy += 1
@@ -303,15 +303,15 @@ def MISC_handle():
     global DKOM_constant, dev_port, dev_system
     global st
     if IOGetDeviceOb and lines-old_line_counter < CONS1:
-        if re.search("eax, \[eax+8\]", st):
+        if re.search(r"eax, \[eax+8\]", st):
             IRP_hook += 1
-    elif re.search("SystemInformationClass", st):
-        t = re.split('\t\t', st)
-        tt = re.split('\t', t[1])
+    elif re.search(r"SystemInformationClass", st):
+        t = re.split(r'\t\t', st)
+        tt = re.split(r'\t', t[1])
         sys_info_class = tt[1]
-    elif matches_all_of(st, ["\+70h\]", "move"]):
+    elif matches_all_of(st, [r"\+70h\]", r"move"]):
         IRP_hook += 0.5
-    elif re.search("eax, cr0", st):
+    elif re.search(r"eax, cr0", st):
         CR += 1
     elif re.search("eax, 0FFFEFFFFh", st) and CR > 0:
         CR += 1
@@ -321,48 +321,48 @@ def MISC_handle():
                 Allocation += 1
             elif dis_alloc[current_routine] == "T":
                 dis_Allocation += 1
-    elif matches_all_of(st, ["\[", "\]", "\+"]):
+    elif matches_all_of(st, [r"\[", r"\]", r"\+"]):
         plus =+ 1
-    elif re.search("Harddisk0", st):
+    elif re.search(r"Harddisk0", st):
         mbr += 1
         mbr_suspect = 1
-    elif re.search("\ 7C00h", st) and mbr_suspect == 1:
+    elif re.search(r"\ 7C00h", st) and mbr_suspect == 1:
         mbr += 1
-    elif matches_one_of(st, ["svchost", "explorer",
-                             "winlogon", "lsaas", "krn", "os", "win", "\%"]):
+    elif matches_one_of(st, [r"svchost", r"explorer",
+                             r"winlogon", r"lsaas", r"krn", r"os", r"win", r"\%"]):
         suspectancy += SUS
-    elif API == "IoGetDeviceObjectPointer":
+    elif API == r"IoGetDeviceObjectPointer":
         commS += 1
         IOGetDeviceOb += 1
         old_line_counter = lines
-    elif matches_one_of(st, ["Ndis", "Miniport"]):
+    elif matches_one_of(st, [r"Ndis", r"Miniport"]):
         OWN_net += 1
         net += 1
-    elif re.search("DMA controller", st):
+    elif re.search(r"DMA controller", st):
         DMA += 1
-    elif re.search("Interrupt Controller", st):
+    elif re.search(r"Interrupt Controller", st):
         Int_cont += 1
-    elif re.search("analysis failed", st):
+    elif re.search(r"analysis failed", st):
         obfuscation += OBFUSCATION
         anti = OBFUSCATION
-    elif matches_one_of(st, ["sidt", "lidt", "lgdt", "sgdt"]):
+    elif matches_one_of(st, [r"sidt", r"lidt", r"lgdt", r"sgdt"]):
         idt_hook += IDTHOOK
 
-    elif matches_one_of(st, ["Flink", "Blink"]):
+    elif matches_one_of(st, [r"Flink", r"Blink"]):
         DKOM += DKOM_constant
         DKOM_suspend = 1
-    elif (re.search("EPROCESS", st) and DKOM_suspend == 1):
+    elif (re.search(r"EPROCESS", st) and DKOM_suspend == 1):
         DKOM += DKOM_constant
-    elif re.search("INT3", st):
+    elif re.search(r"INT3", st):
         anti += 1
         # print("INT3 detected! (anti analysis)")
-    elif re.search("ObDereferenceObject", st):
+    elif re.search(r"ObDereferenceObject", st):
         IRP_hook += 1
-    elif matches_one_of(st, ["READ_PORT", "WRITE_PORT"]):
+    elif matches_one_of(st, [r"READ_PORT", r"WRITE_PORT"]):
         dev_port += 1
-    elif re.search("Dump_", st):
+    elif re.search(r"Dump_", st):
         dev_port += 1
-    elif matches_one_of(st, ["READ_REGISTER", "WRITE_REGISTER"]):
+    elif matches_one_of(st, [r"READ_REGISTER", r"WRITE_REGISTER"]):
         dev_system += 1
         
 
