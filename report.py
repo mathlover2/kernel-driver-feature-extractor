@@ -121,13 +121,33 @@ from dependencies.device_types import *
 from dependencies.entropy import *
 from dependencies.clusters import *
 
-
 import re
 import sys
+
+# We precomile the regexes in order to try to speed up the
+# execution. We use a class CompiledRegexes in order to do this.
+
+class CompiledRegexes:
+    def __init__(self):
+        self.cache = dict()
+    def __call__(self, regex_string):
+        if regex_string not in self.cache:
+            self.cache[regex_string] = re.compile(regex_string)
+        return self.cache[regex_string]
+    def search(self, regex_string, line):
+        return self(regex_string).search(line)
+    def split(self, regex_string, line):
+        return self(regex_string).split(line)
+    def sub(self, regex_string, repl, line):
+        return self(regex_string).subs(repl)
+            
+compiled_regexes = CompiledRegexes
+
 
 # This is the first subroutine run in the course of the program, so
 # the authors clearly ided to call it "first" as a result of that
 # fact. It opens the input file ...
+
 
 def first():
     global filename, in_DriverEntry, Entry_sub, Entry_sub_count
@@ -135,26 +155,26 @@ def first():
     global st, openedFile
     openedFile = open(filename, "r")
     for line in openedFile.readlines():
-        if re.search(r'__stdcall\ DriverEntry\(', line):
+        if compiled_regexes.search(r'__stdcall\ DriverEntry\(', line):
             in_DriverEntry = 1
             Entry_sub['DriverEntry'] = 1
         elif in_DriverEntry == 1:
-            if re.search(r"call\tsub", line):
-                l = re.split(r"sub_", line)
+            if compiled_regexes.search(r"call\tsub", line):
+                l = compiled_regexes.split(r"sub_", line)
                 Entry_sub["sub_" + l[1]] = 1
                 Entry_sub_count += 1
-            elif re.search(r"call\tloc", line):
-                l = re.split('loc_', line)
+            elif compiled_regexes.search(r"call\tloc", line):
+                l = compiled_regexes.split('loc_', line)
                 Entry_sub['loc_' + l[1]] = 1
                 Entry_sub_count += 1
-        if re.search(r"\tendp", line):
-            l = re.split(r"\t", line)
+        if compiled_regexes.search(r"\tendp", line):
+            l = compiled_regexes.split(r"\t", line)
             r = l[0]
             if r == "DriverEntry":
                 in_DriverEntry = 0
     openedFile.close()
     openedFile = open(filename, "r")
-    f = re.split(r"\/", filename)
+    f = compiled_regexes.split(r"\/", filename)
     size = len(f) - 1
     file_name = f[size]
     DKOM_suspend = 0
@@ -169,15 +189,15 @@ def VAR_handle():
     global st
     API_found = 0
     lines += 1
-    if re.search(r"^push.*DesiredAccess$", st):
-        l = re.split(r"push", st)
-        d = re.split(r";", l[1])
+    if compiled_regexes.search(r"^push.*DesiredAccess$", st):
+        l = compiled_regexes.split(r"push", st)
+        d = compiled_regexes.split(r";", l[1])
         DesiredAccess = d[0]
-    if re.search(r"^cmp ", st):
-        l = re.split(r"\,",st)
-        l[1] = re.sub(r"[\x0A\x0D]", "", l[1])
-        if re.search(r"h", l[1]):
-            ll = re.split(r"h", l[1])
+    if compiled_regexes.search(r"^cmp ", st):
+        l = compiled_regexes.split(r"\,",st)
+        l[1] = compiled_regexes.sub(r"[\x0A\x0D]", "", l[1])
+        if compiled_regexes.search(r"h", l[1]):
+            ll = compiled_regexes.split(r"h", l[1])
             cmp_constant = ll[1:]
         else:
             cmp_constant = "INVALID"
@@ -186,12 +206,12 @@ def VAR_handle():
 def find_current_routine():
     global current_routine
     global st
-    if re.search(r"^sub", st):
-        l = re.split(r"\t", st)
+    if compiled_regexes.search(r"^sub", st):
+        l = compiled_regexes.split(r"\t", st)
         current_routine = l[0]
-    elif re.search(r"^sub", st):
+    elif compiled_regexes.search(r"^sub", st):
         current_routine = "INVALID"
-    elif re.search(r"DriverEntry", st):
+    elif compiled_regexes.search(r"DriverEntry", st):
         current_routine = "DriverEntry"
 
 def API_handle():
@@ -202,17 +222,17 @@ def API_handle():
                                           r"Ob", r"Po", r"Ps", r"Rtl",
                                           r"Se", r"Ndis", r"Cc", r"Se"]]
     if matches_one_of(st, match_list):
-        l = re.split("ds:", st)
-        l[1] = re.sub(r"[\x0a\x0D]", "", st)
+        l = compiled_regexes.split("ds:", st)
+        l[1] = compiled_regexes.sub(r"[\x0a\x0D]", "", st)
         API = l[1]
         APIcount += 1
 
 def CONSTANTS_handle():
     global constant, SMM
     global st
-    if re.search(" [0-F]*h", st):
+    if compiled_regexes.search(" [0-F]*h", st):
         constant += 1
-        if re.search(" A[0-F]{7}h", st) or re.search(" B[0-F]{7}h", st):
+        if compiled_regexes.search(" A[0-F]{7}h", st) or compiled_regexes.search(" B[0-F]{7}h", st):
             SMM += 1
 
 def IRP_handle():
@@ -222,13 +242,13 @@ def IRP_handle():
     global st
     if Entry_sub[current_routine] == 1:
         DriverEntry_size += 1
-        if re.search(r'\*4\+38h', st):
+        if compiled_regexes.search(r'\*4\+38h', st):
             MJ_loop = "T"
             if cmp_constant != "INVALID":
                 MJ_IRP = "0-"+hex(cmp_constant)+MJ_IRP
-        elif re.search(r"\[\+\d\d38-\d\d53]h\]", st):
-            l = re.split(r"\+", st)
-            d = re.split(r"h", l[1])
+        elif compiled_regexes.search(r"\[\+\d\d38-\d\d53]h\]", st):
+            l = compiled_regexes.split(r"\+", st)
+            d = compiled_regexes.split(r"h", l[1])
             # MJ_IRP[c] = d[0]
             IRP_counter += 1
             if d[0] == '71' or d[0] == '70':
@@ -247,23 +267,23 @@ def DEVICE_handle():
     global devicetype, types, undoc_device
     global deviceN
     global st
-    if re.search(r"\\\\Device\\\\", st):
-        tt = re.split(r"[\"\']", st)
+    if compiled_regexes.search(r"\\\\Device\\\\", st):
+        tt = compiled_regexes.split(r"[\"\']", st)
         devicename = devicename + " " + tt[1]
         y = entropy(devicename)
         if y < String_entropy:
             String_entropy = y
         device_count += 1
         device_N = "T"
-        if re.search(r"\.|\:",st):
+        if compiled_regexes.search(r"\.|\:",st):
             suspectancy += 1
-        if re.search(r"\*", st):
+        if compiled_regexes.search(r"\*", st):
             suspectancy += 1
-        if re.search(r"\.\.", st):
+        if compiled_regexes.search(r"\.\.", st):
             suspectancy += 1
-    elif re.search(r"\;\ DeviceType/", st):
-        tt = re.split(r"push", st)
-        ttt = re.split(r"\t", tt[1])
+    elif compiled_regexes.search(r"\;\ DeviceType/", st):
+        tt = compiled_regexes.split(r"push", st)
+        ttt = compiled_regexes.split(r"\t", tt[1])
         devicetype = ttt[1][:-1]
         if device_type[devicetype]:
             types = types + device_type[devicetype]
@@ -278,13 +298,13 @@ def VARIABLES_handle():
     global st
     search_expr = r"[\\\/\&\.\:\*\'\"\]\[\(\)\&\$\^\#\-\_\,\;\@\ \!\?\+\=]"
     sub_expr = r"(" + search_expr + r"|" + r"[\x20-\x7f])" 
-    if re.search(r"db\ \'", st):
-        w = re.split(r"\'", st)
-        t2 = re.split(r"\'", w[1])
+    if compiled_regexes.search(r"db\ \'", st):
+        w = compiled_regexes.split(r"\'", st)
+        t2 = compiled_regexes.split(r"\'", w[1])
         string = t2[0]
-        if re.search(search_expr, string):
+        if compiled_regexes.search(search_expr, string):
             suspectancy += 1
-        string = re.sub(search_expr, "", string)
+        string = compiled_regexes.sub(search_expr, "", string)
         str_count += 1
         e = entropy(string)
         if e < String_entropy:
@@ -303,30 +323,30 @@ def MISC_handle():
     global DKOM_constant, dev_port, dev_system
     global st
     if IOGetDeviceOb and lines-old_line_counter < CONS1:
-        if re.search(r"eax, \[eax+8\]", st):
+        if compiled_regexes.search(r"eax, \[eax+8\]", st):
             IRP_hook += 1
-    elif re.search(r"SystemInformationClass", st):
-        t = re.split(r'\t\t', st)
-        tt = re.split(r'\t', t[1])
+    elif compiled_regexes.search(r"SystemInformationClass", st):
+        t = compiled_regexes.split(r'\t\t', st)
+        tt = compiled_regexes.split(r'\t', t[1])
         sys_info_class = tt[1]
     elif matches_all_of(st, [r"\+70h\]", r"move"]):
         IRP_hook += 0.5
-    elif re.search(r"eax, cr0", st):
+    elif compiled_regexes.search(r"eax, cr0", st):
         CR += 1
-    elif re.search("eax, 0FFFEFFFFh", st) and CR > 0:
+    elif compiled_regexes.search("eax, 0FFFEFFFFh", st) and CR > 0:
         CR += 1
-    elif re.search("call\tsub\_", st):
-        if re.search(current_routine, st):
+    elif compiled_regexes.search("call\tsub\_", st):
+        if compiled_regexes.search(current_routine, st):
             if alloc[current_routine] == "T":
                 Allocation += 1
             elif dis_alloc[current_routine] == "T":
                 dis_Allocation += 1
     elif matches_all_of(st, [r"\[", r"\]", r"\+"]):
         plus =+ 1
-    elif re.search(r"Harddisk0", st):
+    elif compiled_regexes.search(r"Harddisk0", st):
         mbr += 1
         mbr_suspect = 1
-    elif re.search(r"\ 7C00h", st) and mbr_suspect == 1:
+    elif compiled_regexes.search(r"\ 7C00h", st) and mbr_suspect == 1:
         mbr += 1
     elif matches_one_of(st, [r"svchost", r"explorer",
                              r"winlogon", r"lsaas", r"krn", r"os", r"win", r"\%"]):
@@ -338,11 +358,11 @@ def MISC_handle():
     elif matches_one_of(st, [r"Ndis", r"Miniport"]):
         OWN_net += 1
         net += 1
-    elif re.search(r"DMA controller", st):
+    elif compiled_regexes.search(r"DMA controller", st):
         DMA += 1
-    elif re.search(r"Interrupt Controller", st):
+    elif compiled_regexes.search(r"Interrupt Controller", st):
         Int_cont += 1
-    elif re.search(r"analysis failed", st):
+    elif compiled_regexes.search(r"analysis failed", st):
         obfuscation += OBFUSCATION
         anti = OBFUSCATION
     elif matches_one_of(st, [r"sidt", r"lidt", r"lgdt", r"sgdt"]):
@@ -351,16 +371,16 @@ def MISC_handle():
     elif matches_one_of(st, [r"Flink", r"Blink"]):
         DKOM += DKOM_constant
         DKOM_suspend = 1
-    elif (re.search(r"EPROCESS", st) and DKOM_suspend == 1):
+    elif (compiled_regexes.search(r"EPROCESS", st) and DKOM_suspend == 1):
         DKOM += DKOM_constant
-    elif re.search(r"INT3", st):
+    elif compiled_regexes.search(r"INT3", st):
         anti += 1
         # print("INT3 detected! (anti analysis)")
-    elif re.search(r"ObDereferenceObject", st):
+    elif compiled_regexes.search(r"ObDereferenceObject", st):
         IRP_hook += 1
     elif matches_one_of(st, [r"READ_PORT", r"WRITE_PORT"]):
         dev_port += 1
-    elif re.search(r"Dump_", st):
+    elif compiled_regexes.search(r"Dump_", st):
         dev_port += 1
     elif matches_one_of(st, [r"READ_REGISTER", r"WRITE_REGISTER"]):
         dev_system += 1
@@ -597,18 +617,18 @@ def report2():
 
 def matches_one_of(s, regex_list):
     for regex in regex_list:
-        if re.search(regex, s):
+        if compiled_regexes.search(regex, s):
             return True
     return False
 
 def matches_all_of(s, regex_list):
     for regex in regex_list:
-        if not re.search(regex, s):
+        if not compiled_regexes.search(regex, s):
             return False
     return True
 
 def grep(regex, string_list):
-    return list(filter(lambda s: re.search(regex, s), string_list))
+    return list(filter(lambda s: compiled_regexes.search(regex, s), string_list))
 
 def SCORE_analysis_check(arg, check_length=True):
     global string
