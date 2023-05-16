@@ -139,7 +139,7 @@ class CompiledRegexes:
     def split(self, regex_string, line):
         return self(regex_string).split(line)
     def sub(self, regex_string, repl, line):
-        return self(regex_string).subs(repl)
+        return self(regex_string).sub(repl, line)
             
 compiled_regexes = CompiledRegexes()
 
