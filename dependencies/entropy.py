@@ -1,5 +1,6 @@
 from collections import Counter
 from math import log2
+from string import ascii_letters, digits
 
 def entropy(data):
     if data:
