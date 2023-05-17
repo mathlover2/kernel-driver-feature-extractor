@@ -297,14 +297,14 @@ def VARIABLES_handle():
     global string_entropy, string
     global st
     search_expr = r"[\\\/\&\.\:\*\'\"\]\[\(\)\&\$\^\#\-\_\,\;\@\ \!\?\+\=]"
-    sub_expr = r"(" + search_expr + r"|" + r"[\x20-\x7f])" 
+    sub_expr = search_expr + r"|" + r"[\x00-\x1f]"
     if compiled_regexes.search(r"db\ \'", st):
         w = compiled_regexes.split(r"\'", st)
         t2 = compiled_regexes.split(r"\'", w[1])
         string = t2[0]
         if compiled_regexes.search(search_expr, string):
             suspectancy += 1
-        string = compiled_regexes.sub(search_expr, "", string)
+        string = compiled_regexes.sub(sub_expr, "", string)
         str_count += 1
         e = entropy(string)
         if e < String_entropy:
@@ -635,7 +635,7 @@ def grep(regex, string_list):
 def SCORE_analysis_check(arg, check_length=True):
     global string
     if check_length:
-        return grep("("+ API + ")|(^" + string + ")", arg) and len(string) > 6
+        return len(string) > 6 and grep("("+ API + ")|(^" + string + ")", arg)
     else:
         return grep("("+ API + ")|(^" + string + ")", arg)
 
