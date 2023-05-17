@@ -304,7 +304,7 @@ def VARIABLES_handle():
         string = t2[0]
         if compiled_regexes.search(search_expr, string):
             suspectancy += 1
-        string = compiled_regexes.sub(sub_expr, "", string)
+        string = compiled_regexes.sub(search_expr, "", string)
         str_count += 1
         e = entropy(string)
         if e < String_entropy:
